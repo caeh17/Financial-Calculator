@@ -115,7 +115,7 @@ convertVectorToFunction <- function(irr, vect, dates) {
 #' @return The IRR for cashflows provided.
 findRootContinuous <- function(vect, dates) {
   dates <- convertDatesToT(dates)
-  roots <- uniroot(function(x) convertVectorToFunction(x, vect, dates), c(-1,1))
+  roots <- uniroot(function(x) convertVectorToFunction(x, vect, dates), c(-10,10))
   return(roots)
 }
 
@@ -191,6 +191,7 @@ compileResults <- function(file) {
 readFile <- function(fileName) {
   values <- read.csv2(file = fileName, stringsAsFactors = FALSE)
   values <- reshape(values, idvar = "Date", timevar = "Name", direction = "wide")
+  values[is.na(values)] <- 0
   return(values)
 }
 
