@@ -115,8 +115,13 @@ convertVectorToFunction <- function(irr, vect, dates) {
 #' @return The IRR for cashflows provided.
 findRootContinuous <- function(vect, dates) {
   dates <- convertDatesToT(dates)
-  roots <- uniroot(function(x) convertVectorToFunction(x, vect, dates), c(-10,10))
-  return(roots)
+  root <- NA
+
+  try(root <- uniroot(function(x) convertVectorToFunction(x, vect, dates), c(-1,1))$root, silent=TRUE)
+
+  if(is.na(root)) root <- 0
+
+  return(root)
 }
 
 #' Solve for the IRR with monthly aggregation of cash flows.
@@ -133,7 +138,7 @@ findRootMonthly <- function(vect, dates) {
 
   monthlyCF <- monthlyCF[findFirst(monthlyCF):length(monthlyCF)]
   roots <- polyroot(monthlyCF)
-  return(Re(roots)[abs(Im(roots)) < 1e-3])
+  return(Re(roots)[abs(Im(roots)) < 1e-2])
 }
 
 #' Solve for the IRR with yearly aggregation of cash flows.
@@ -165,16 +170,15 @@ compileResults <- function(file) {
   output <- matrix(NA, nrow = l - 1, ncol = 3)
 
   for (i in 2:l) {
-    output[i - 1,1] <- 1 / max(findRootYearly(t(file[i]), file[1])) - 1
-    output[i - 1,2] <- (1 / max(findRootMonthly(t(file[i]), file[1])) - 1) * 12
-    output[i - 1,3] <- findRootContinuous(t(file[i]), file[1])$root
+    output[i - 1,1] <- 1 / max(-Inf, findRootYearly(t(file[i]), file[1])) - 1
+    output[i - 1,2] <- (1 / max(-Inf, findRootMonthly(t(file[i]), file[1])) - 1) * 12
+    output[i - 1,3] <- findRootContinuous(t(file[i]), file[1])
   }
 
   output <- as.data.frame(output)
-  rownames(output) <- rowNames[2:length(rowNames)]
   colNames <- c("IRR, yearly", "IRR, monthly", "IRR, continuous")
   colnames(output) <- colNames
-
+  output <- data.frame(Investments = rowNames[2:length(rowNames)], output)
   return(output)
 }
 
