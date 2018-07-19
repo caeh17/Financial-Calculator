@@ -225,7 +225,7 @@ writeFile <- function(results, fileName) {
 #' This method executes the program, taking at least one command line parameter.
 run <- function() {
   args = commandArgs(trailingOnly = TRUE)
-  if (length(args) > 0) {
+  if (length(args) > 0 && length(args) < 5) {
     fileName <- args[1]
     file <- readFile(fileName)
     if (length(args) == 2) {
@@ -236,15 +236,33 @@ run <- function() {
       file <- rbind(file, lastRow)
     }
     if (length(args) == 3) {
-      if (identical(args[3], "-r")) {
-        print("Oh yeah!")
+      if (identical(args[3], "-R")) {
+        mv <- read.csv2(args[2])[,3]
+        spread <- sample(1:5, 1) * 12
+        parts <- matrix(nrow = length(mv), ncol = spread)
+        for (k in 1:nrow(parts)) {
+          if (mv[k] == 0) {
+            parts[k,] <- vector(mode = "numeric", length = spread)
+          } else {
+            parts[k,] <- runif(spread, 0, mv[k])
+            parts[k,] <- parts[k,] / sum(parts[k,])
+            parts[k,] <- parts[k,] * mv[k]
+          }
+        }
+        for (j in 1:spread) {
+          date <- as.Date(as.character(file[,1])[length(file[,1])], format = "%d.%m.%Y") + 30
+          lastRow <- list(as.character(format(date, "%d.%m.%Y")))
+          for(i in 1:length(mv)) {
+            lastRow[[length(lastRow) + 1]] <- parts[i, j]
+          }
+          file <- rbind(file, lastRow)
+        }
       } else if (is.na(as.integer(args[3]))) {
-        stop("Invalid third argment; should be either an integer or '-r'", call.=FALSE)
+        stop("Invalid third argment; should be either an integer or '-R'", call.=FALSE)
       } else {
         mv <- read.csv2(args[2])[,3]
         spread <- as.numeric(args[3]) * 365
-        for (i in 1:spread) {
-          # Account for leap years below; then finished ->
+        for (j in 1:spread) {
           date <- as.Date(as.character(file[,1])[length(file[,1])], format = "%d.%m.%Y") + 1
           lastRow <- list(as.character(format(date, "%d.%m.%Y")))
           for(i in 1:length(mv)) lastRow[[length(lastRow) + 1]] <- mv[i] / spread
@@ -252,11 +270,35 @@ run <- function() {
         }
       }
     }
+    if (length(args) == 4 && (is.na(as.integer(args[4]))) || !identical(args[3], "-r")) {
+      stop("Invalid third or fourth argment; 3rd should be '-r' and 4th an integer", call.=FALSE)
+    } else if (length(args) == 4) {
+      mv <- read.csv2(args[2])[,3]
+      spread <- as.numeric(args[4]) * 12
+      parts <- matrix(nrow = length(mv), ncol = spread)
+      for (k in 1:nrow(parts)) {
+        if (mv[k] == 0) {
+          parts[k,] <- vector(mode = "numeric", length = spread)
+        } else {
+          parts[k,] <- runif(spread, 0, mv[k])
+          parts[k,] <- parts[k,] / sum(parts[k,])
+          parts[k,] <- parts[k,] * mv[k]
+        }
+      }
+      for (j in 1:spread) {
+        date <- as.Date(as.character(file[,1])[length(file[,1])], format = "%d.%m.%Y") + 30
+        lastRow <- list(as.character(format(date, "%d.%m.%Y")))
+        for(i in 1:length(mv)) {
+          lastRow[[length(lastRow) + 1]] <- parts[i, j]
+        }
+        file <- rbind(file, lastRow)
+      }
+    }
     #print(file[240:length(file[,1]),])
     results <- compileResults(file)
     writeFile(results, fileName)
   } else {
-    stop("At least one argument must be supplied (input file).n", call.=FALSE)
+    stop("At least one and no more than four arguments must be supplied (input file).n", call.=FALSE)
   }
 }
 
