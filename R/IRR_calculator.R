@@ -120,7 +120,10 @@ findRootContinuous <- function(vect, dates) {
   try(root <- uniroot(function(x) convertVectorToFunction(x, vect, dates), c(-1,1))$root, silent=TRUE)
 
   if(is.na(root)) root <- 0
-
+  if (printR) {
+    print("Continuous IRR: ")
+    print(root)
+  }
   return(root)
 }
 
@@ -138,6 +141,10 @@ findRootMonthly <- function(vect, dates) {
 
   monthlyCF <- monthlyCF[findFirst(monthlyCF):length(monthlyCF)]
   roots <- polyroot(monthlyCF)
+  if (printR) {
+    print("Monthly IRR: ")
+    print((1/Re(roots)[abs(Im(roots)) < 1e-2] - 1) * 12)
+  }
   return(Re(roots)[abs(Im(roots)) < 1e-2])
 }
 
@@ -154,6 +161,10 @@ findRootYearly <- function(vect, dates) {
   }
   yearlyCF <- yearlyCF[findFirst(yearlyCF):length(yearlyCF)]
   roots <- polyroot(yearlyCF)
+  if (printR) {
+    print("Yearly IRR: ")
+    print(1/Re(roots)[abs(Im(roots)) < 1e-3] - 1)
+  }
   return(Re(roots)[abs(Im(roots)) < 1e-3])
 }
 
@@ -170,6 +181,9 @@ compileResults <- function(file) {
   output <- matrix(NA, nrow = l - 1, ncol = 3)
 
   for (i in 2:l) {
+    if (printR) {
+      print(rowNames[i])
+    }
     output[i - 1,1] <- 1 / max(-Inf, findRootYearly(t(file[i]), file[1])) - 1
     output[i - 1,2] <- (1 / max(-Inf, findRootMonthly(t(file[i]), file[1])) - 1) * 12
     output[i - 1,3] <- findRootContinuous(t(file[i]), file[1])
@@ -224,8 +238,14 @@ writeFile <- function(results, fileName) {
 #'
 #' This method executes the program, taking at least one command line parameter.
 run <- function() {
+  printR <<- FALSE
   args = commandArgs(trailingOnly = TRUE)
-  if (length(args) > 0 && length(args) < 5) {
+  if (args[length(args)] == "-print") {
+    printR <<- TRUE
+    args <- args[-length(args)]
+  }
+
+  if (length(args) > 0 && length(args) < 6) {
     fileName <- args[1]
     file <- readFile(fileName)
     if (length(args) == 2) {
@@ -270,7 +290,7 @@ run <- function() {
         }
       }
     }
-    if (length(args) == 4 && (is.na(as.integer(args[4]))) || !identical(args[3], "-r")) {
+    if (length(args) == 4 && (is.na(as.integer(args[4])) || !identical(args[3], "-r"))) {
       stop("Invalid third or fourth argment; 3rd should be '-r' and 4th an integer", call.=FALSE)
     } else if (length(args) == 4) {
       mv <- read.csv2(args[2])[,3]
@@ -294,11 +314,10 @@ run <- function() {
         file <- rbind(file, lastRow)
       }
     }
-    #print(file[240:length(file[,1]),])
     results <- compileResults(file)
     writeFile(results, fileName)
   } else {
-    stop("At least one and no more than four arguments must be supplied (input file).n", call.=FALSE)
+    stop("At least one and no more than five arguments must be supplied (input file).n", call.=FALSE)
   }
 }
 
