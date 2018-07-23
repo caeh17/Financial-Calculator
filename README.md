@@ -6,6 +6,10 @@ calculator run from the command line with .csv files as its input. The results a
 Each operation is implemented in an .R file of its own. So far, only the operation calculating the IRR has been implemented. 
 This was the initial goal of the project, but it can be expanded if the future if needed to encompass more operations like NPV and so on. 
 
+## Download latest version
+
+To get started, download the program [here](https://github.com/caeh17/Financial-Calculator/releases/download/1.0-beta/IRR_calculator.R).
+
 ## Manual
 
 ### Calculating the IRR for a series of cash flows
@@ -19,7 +23,7 @@ Rscript IRR_calculator.R Example_cashflows.csv Example_market_values.csv
 
 Where _Example_cashflows.csv_ is the cash flow data and _Example_market_values.csv_ the market value data. To calculate the IRR for data 
 in only one .csv file, just ignore the second argument. Example files with fictional financial data can be found in the folder
-[Test data](https://github.com/caeh17/Financial-Calculator/tree/master/Test%20data).
+[Test data](https://github.com/caeh17/Financial-Calculator/tree/master/Test%20data) and can be used to test the program.
 
 **N.B. if the .csv files or the calculator file are not all in the same directory, their appropriate paths should be used instead.
 The results file will be created in the same directory as the cash flow file and will bear the same name, except with the text
